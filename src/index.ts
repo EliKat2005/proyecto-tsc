@@ -23,11 +23,6 @@ function preguntarDatos() {
   });
 }
 
-// Llamar a la función para iniciar el proceso de preguntas
-preguntarDatos();
-
-
-
 
 
 function greeter(name: string) {
