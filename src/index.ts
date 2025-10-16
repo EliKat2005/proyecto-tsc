@@ -1,131 +1,139 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-
 import * as readline from 'readline';
 
-// Configurar readline para leer desde la entrada estándar
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
-// Función para preguntar nombre y edad
-function preguntarDatos() {
-  rl.question('¿Cuál es tu nombre? ', (nombre) => {
-    rl.question('¿Cuál es tu edad? ', (edad) => {
-      const edadNumero = parseInt(edad);
-      if (isNaN(edadNumero)) {
-        console.log('Por favor, ingresa un número válido para la edad.');
-      } else {
-        console.log(`Hola, ${nombre}. Tienes ${edadNumero} años.`);
-      }
-      rl.close();
-    });
-  });
-}
 
-// Función para calcular el promedio de notas
-function promedioNotas(){
-  rl.question('¿Cuántas notas deseas ingresar? ', (cantidad) => {
-    const numNotas = parseInt(cantidad);
-    if (isNaN(numNotas) || numNotas <= 0) {
-      console.log('Por favor, ingresa un número válido mayor que cero.');
-      rl.close();
-      return;
-    }
-
-    let notas: number[] = [];
-    let contador = 0;
-
-    const preguntarNota = () => {
-      if (contador < numNotas) {
-        rl.question(`Ingresa la nota ${contador + 1}: `, (nota) => {
-          const notaNumero = parseFloat(nota);
-          if (isNaN(notaNumero) || notaNumero < 0 || notaNumero > 10) {
-            console.log('Por favor, ingresa una nota válida entre 0 y 10.');
-          } else {
-            notas.push(notaNumero);
-            contador++;
-          }
-          preguntarNota();
-        });
-      } else {
-        const suma = notas.reduce((a, b) => a + b, 0);
-        const promedio = suma / notas.length;
-        console.log(`El promedio de las notas es: ${promedio.toFixed(2)}`);
-        rl.close();
-      }
-    };
-    preguntarNota();
-  }); 
-}
-
-// Función para hacer preguntas de manera asincrónica
-function preguntaAsincrona(query: string): Promise<string> {
+function preguntar(pregunta: string): Promise<string> {
   return new Promise((resolve) => {
-    rl.question(query, (respuesta) => {
+    rl.question(pregunta, (respuesta) => {
       resolve(respuesta);
     });
   });
 }
 
-// Función asincrónica para calcular el promedio de notas
-async function promNotas(){
-  try{
-    const cantidad = await preguntaAsincrona('¿Cuántas notas deseas ingresar? ');
-    const numNotas = parseInt(cantidad);
-    const notas: number[] = [];
-    let suma = 0;
-    let promedio = 0;
+// Función tarea
+async function evaluarEmpleados(): Promise<void> {
+  try {
+    console.log('=== EVALUACIÓN DE EMPLEADOS ===\n');
 
-    if (isNaN(numNotas) || numNotas <= 0) {
-      console.log('Por favor, ingresa un número válido mayor que cero.');
-      rl.close();
+    // Num empleados
+    const cantidadTexto = await preguntar('¿Cuántos empleados vas a evaluar? ');
+    const cantidad = parseInt(cantidadTexto);
+
+    if (isNaN(cantidad) || cantidad <= 0) {
+      console.log('Tienes que ingresar un número válido, mayor que cero.');
       return;
     }
-/* 
-    for (let i = 0; i < numNotas; i++) {
-      const notaStr = await preguntaAsincrona(`Ingresa la nota ${i + 1}: `);
-      const notaNumero = parseFloat(notaStr);
-      if (isNaN(notaNumero) || notaNumero < 0 || notaNumero > 10) {
-        console.log('Por favor, ingresa una nota válida entre 0 y 10.');
-        i--;
-      } else {
-        notas.push(notaNumero);
+
+    console.log(`\nVamos a evaluar ${cantidad} empleado(s)\n`);
+
+    // Guardar empleados
+    const empleados: Array<{nombre: string, evaluacion: number}> = [];
+    let sumaTotal = 0;
+    let empleadosDestacados = 0;
+    let mejorEmpleado = { nombre: '', evaluacion: -1 };
+    let peorEmpleado = { nombre: '', evaluacion: 11 };
+
+    // Pedir datos
+    for (let i = 0; i < cantidad; i++) {
+      console.log(`--- Empleado ${i + 1} ---`);
+      
+      // Pedir nombre
+      let nombre = '';
+      while (nombre.trim() === '') {
+        nombre = await preguntar('Nombre: ');
+        if (nombre.trim() === '') {
+          console.log('El nombre no puede estar vacío');
+        }
       }
-    }
-      */   
-    while (notas.length < numNotas) {
-      const notaStr = await preguntaAsincrona(`Ingresa la nota ${notas.length + 1}: `);
-      const notaNumero = parseFloat(notaStr);
-      if (isNaN(notaNumero) || notaNumero < 0 || notaNumero > 10) {
-        console.log('Por favor, ingresa una nota válida entre 0 y 10.');
-      } else {
-        notas.push(notaNumero);
+
+      // Pedir evaluación
+      let evaluacion = -1;
+      while (evaluacion < 0 || evaluacion > 10) {
+        const evalTexto = await preguntar('Evaluación (0-10): ');
+        evaluacion = parseFloat(evalTexto);
+        
+        if (isNaN(evaluacion) || evaluacion < 0 || evaluacion > 10) {
+          console.log('La evaluación debe ser un número entre 0 y 10');
+        }
       }
+
+      // Guardar el empleado
+      empleados.push({ nombre: nombre.trim(), evaluacion });
+      
+      // Calcular estadísticas
+      sumaTotal += evaluacion;
+      
+      if (evaluacion > 7) {
+        empleadosDestacados++;
+      }
+      
+      if (evaluacion > mejorEmpleado.evaluacion) {
+        mejorEmpleado = { nombre: nombre.trim(), evaluacion };
+      }
+      
+      if (evaluacion < peorEmpleado.evaluacion) {
+        peorEmpleado = { nombre: nombre.trim(), evaluacion };
+      }
+      
+      console.log('');
     }
 
-    suma = notas.reduce((a, b) => a + b, 0);
-    promedio = suma / notas.length;
+    // Mostrar resultados
+    console.log('\n=== RESULTADOS ===');
+    
+    // Lista de empleados
+    console.log('\nEmpleados evaluados:');
+    empleados.forEach((emp, i) => {
+      console.log(`  ${i + 1}. ${emp.nombre} - ${emp.evaluacion}/10`);
+    });
 
-    console.log(`El promedio de las notas es: ${promedio.toFixed(2)}`);
-    rl.close();
-  } catch(error){
-    console.error('Error:', error);
-    rl.close();
+    // Estadísticas
+    const promedio = sumaTotal / cantidad;
+    console.log(`\nEstadísticas:`);
+    console.log(`  • Promedio general: ${promedio.toFixed(1)}/10`);
+    console.log(`  • Empleados destacados (>7): ${empleadosDestacados}`);
+    console.log(`  • Mejor evaluación: ${mejorEmpleado.nombre} (${mejorEmpleado.evaluacion}/10)`);
+    console.log(`  • Peor evaluación: ${peorEmpleado.nombre} (${peorEmpleado.evaluacion}/10)`);
+
+    // Comentario sobre el promedio
+    console.log('\nAnálisis:');
+    if (promedio >= 8) {
+      console.log('  ¡Excelente! El equipo está funcionando muy bien');
+    } else if (promedio >= 6) {
+      console.log('  Buen desempeño, pero hay espacio para mejorar');
+    } else {
+      console.log('  Necesitan mejorar como equipo');
+    }
+
+  } catch (error) {
+    console.log('Ocurrió un error:', error);
   }
 }
 
+// Programa principal 
+async function main() {
+  console.log('Bienvenido al sistema de evaluación\n');
+  
+  let otraEvaluacion = true;
+  
+  while (otraEvaluacion) {
+    await evaluarEmpleados();
+    
+    const respuesta = await preguntar('\n¿Quieres hacer otra evaluación? (s/n): ');
+    otraEvaluacion = respuesta.toLowerCase() === 's';
+    
+    if (otraEvaluacion) {
+      console.log('\n' + '='.repeat(30) + '\n');
+    }
+  }
+  
+  console.log('\n¡Gracias por usar el sistema!');
+  rl.close();
+}
 
-
-
-
-
-// Llamar a las funciones
-
-promNotas();
-//preguntarDatos();
-//promedioNotas();
-
-
-
+// Iniciar el programa
+main();
